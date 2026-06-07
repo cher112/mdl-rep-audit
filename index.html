@@ -52,26 +52,27 @@
 
   <h2>Result (ColoredMNIST)</h2>
   <figure>
-    <img src="figures/fig1_mdl_audit_full.png" alt="MDL audit of deep representations">
+    <img src="figures/fig_v2.png" alt="exact-NML audit of deep representations">
     <figcaption>
-      The colour concept gets a far larger environment-help rate (0.045 nats/sample) than
-      shape-orthogonal (0.008) or nuisance (≈0) directions — against an explicit
-      <code>(Δk/2)·log n / n</code> consistency floor — and the score tracks colour-alignment
-      across coordinates (r = 0.92).
+      Audited <b>without colour labels</b> (PCA-basis directions). (a) exact multinomial NML:
+      the colour direction's environment-modulated code is shorter than the invariant one
+      (H = 0.079 nats/sample). (b) across <b>30</b> CNNs the in-distribution env-help score predicts
+      the unseen colour-flip accuracy drop (<b>Spearman ρ = 0.88</b>, CI [0.69, 0.96]). (c) projecting
+      out flagged directions raises OOD accuracy <b>0.10 → 0.65</b>, beating random / PCA / shape
+      controls. (d) with two shortcuts, the audit flags whichever the model relied on.
     </figcaption>
   </figure>
 
   <h2>Run</h2>
   <pre>pip install modal &amp;&amp; modal token new
-modal run modal_nml_audit.py          # smoke
-modal run modal_nml_audit.py --full   # full figure</pre>
+modal run modal_nml_audit_v2.py --full   # ColoredMNIST, 30 CNNs, ~15 min on one GPU</pre>
 
-  <h2>Caveats</h2>
+  <h2>Honest scope</h2>
   <p>
-    A preliminary proof-of-concept: two-part Gaussian MDL (not exact NML); concept directions
-    probed on the same sample; by MDL consistency the discrete winner behaves like a significance
-    test at large <code>n</code> (hence the continuous rate + floor). It detects
-    <i>evidence of shortcut-like dependence under specified model classes</i>, not causal identification.
+    The audit detects environment-dependent shortcut directions under specified NML model classes,
+    predicts OOD degradation, and enables a simple projection-based mitigation. It is <b>not</b> a
+    general causal-discovery guarantee, and it analyses observed-environment structure (CLOUD-style),
+    not an exact hidden-latent solver.
   </p>
 </div>
 </body>

@@ -1,63 +1,60 @@
-# MDL Representation Audit
+# MDL / NML Representation Audit
 
-A **hyperparameter-light Minimum Description Length (MDL) audit** of *environment-dependent*
-(spurious / shortcut-like) dependencies in deep representations.
+A **hyperparameter-light, exact-NML audit** of *environment-dependent* (spurious / shortcut-like)
+dependencies in deep representations.
 
-Preliminary code for a University of Tokyo research proposal
+Preliminary code for a University of Tokyo master's research proposal
 (大学院総合文化研究科 広域科学専攻 広域システム科学系, Prof. Shin Matsushima).
 
 ## Idea
 
-Extend NML/MDL **latent-common-cause detection** (CLOUD; Kobayashi–Miyaguchi–Matsushima, 2024)
-from raw variables to the **learned concept directions** of a *frozen* deep encoder.
+Extend Matsushima's **CLOUD** (NML-code-based detection of unobserved common causes,
+arXiv:2403.06499) from raw variables to the **learned directions** of a *frozen* deep encoder.
+For each representation direction `z`, compare the codelength of an **environment-invariant**
+`Z→Y` model against an **environment-modulated** one, using **exact multinomial NML stochastic
+complexity** (Kontkanen–Myllymäki recurrence), *not* BIC. A shorter modulated code ⇒ the
+direction's predictiveness is environment-dependent ⇒ shortcut-like.
 
-For a representation `Z`, label `Y`, and environment indicator `E`, a two-part-MDL codelength
-selects, per concept direction, among:
+## Results — ColoredMNIST (`modal_nml_audit_v2.py`)
 
-| model | meaning |
-|---|---|
-| `z ⊥ Y` | the direction carries no label information |
-| `z \| Y` | label relation **shared across environments** → robust content |
-| `z \| Y,E` | label relation **modulated by environment** → spurious / shortcut |
+The audit runs **without using the colour labels** (it audits PCA-basis directions):
 
-The model with the shortest codelength wins — **no tuned threshold**. An environment-modulated
-relation flags a shortcut-like dependency; an environment-invariant one flags robust content.
+1. **Exact NML, not BIC.** The colour direction's environment-modulated code is shorter than the
+   invariant one (H = **0.079** nats/sample).
+2. **Predicts OOD failure.** Across **30** independently trained CNNs, the in-distribution env-help
+   score predicts the unseen colour-flip accuracy drop — **Spearman ρ = 0.88**, 95% CI [0.69, 0.96]
+   (Pearson 0.965).
+3. **Mitigation.** Projecting out the flagged directions and refitting only a linear head raises
+   colour-flip OOD accuracy **0.10 → 0.65**, beating random / PCA / shape-direction controls.
+4. **Not circular.** With two competing shortcuts (colour + a corner patch), the label-free audit
+   flags whichever one the model actually relied on (colour-strong ⇒ colour dirs; patch-strong ⇒
+   patch dirs).
 
-## Result (ColoredMNIST)
+![audit](figures/fig_v2.png)
 
-![MDL audit of deep representations](figures/fig1_mdl_audit_full.png)
-
-A CNN is trained on ColoredMNIST (colour is a spurious, environment-flipped cue), then frozen.
-The MDL audit assigns a far larger **environment-help rate** to the colour concept
-(**0.045** nats/sample) than to shape-orthogonal (0.008) or nuisance (≈0) directions — all
-measured against an explicit `(Δk/2)·log n / n` *consistency floor* — and the same score tracks
-colour-alignment across individual representation coordinates (**r = 0.92**).
-
-## Run (Modal)
+## Run
 
 ```bash
-pip install modal && modal token new     # one-time auth
-modal run modal_nml_audit.py             # smoke test (small)
-modal run modal_nml_audit.py --full      # full run → figures/fig1_mdl_audit_full.png
+pip install modal && modal token new       # one-time auth
+modal run modal_nml_audit_v2.py --full     # ColoredMNIST, 30 CNNs, ~15 min on one GPU
 ```
 
-Dependencies (torch, torchvision, scikit-learn, matplotlib) are installed inside the Modal image;
-nothing heavy is needed locally.
+Dependencies (torch, torchvision, scipy, scikit-learn, matplotlib) install inside the Modal image;
+nothing heavy is needed locally. `modal_nml_audit.py` is the earlier single-model version.
 
-## Caveats (honest scope)
+## Honest scope
 
-This is a **preliminary proof-of-concept**, not a finished validation. It uses **two-part Gaussian
-MDL** (a stochastic-complexity approximation), not exact NML; concept directions are probed on the
-same sample; and, by MDL consistency, at large `n` the discrete winner behaves like a significance
-test (hence the **continuous rate** + the explicit floor). The audit detects *evidence of
-shortcut-like dependence under specified model classes*, **not** causal identification.
+The audit detects environment-dependent shortcut directions under specified NML model classes,
+predicts OOD degradation, and enables a simple projection-based mitigation. It is **not** a general
+causal-discovery guarantee, and it analyses observed-environment structure (CLOUD-style), not an
+exact hidden-latent solver.
 
 ## References
 
-- Kobayashi, Miyaguchi & Matsushima, *Detection of Unobserved Common Causes based on NML Code* (CLOUD), arXiv:2403.06499, 2024.
-- Miyaguchi, Matsushima & Yamanishi, *Sparse Graphical Modeling via Stochastic Complexity*, SDM 2017.
-- Voita & Titov, *Information-Theoretic Probing with MDL*, EMNLP 2020.
-- Arjovsky et al., *Invariant Risk Minimization*, 2019; Sagawa et al., *Group-DRO*, ICLR 2020.
+- Kobayashi, Miyaguchi, Matsushima. *Detection of Unobserved Common Causes based on NML Code* (CLOUD). arXiv:2403.06499, 2024.
+- Miyaguchi, Matsushima, Yamanishi. *Sparse Graphical Modeling via Stochastic Complexity*. SDM 2017.
+- Voita, Titov. *Information-Theoretic Probing with Minimum Description Length*. EMNLP 2020.
+- Kontkanen, Myllymäki. *A linear-time algorithm for computing the multinomial stochastic complexity*. Information Processing Letters, 2007.
 
 ## License
 

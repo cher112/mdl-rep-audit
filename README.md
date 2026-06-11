@@ -20,12 +20,12 @@ direction's predictiveness is environment-dependent ⇒ shortcut-like.
 The audit runs **without using the colour labels** (it audits PCA-basis directions):
 
 1. **Exact NML, not BIC.** The colour direction's environment-modulated code is shorter than the
-   invariant one (H = **0.079** nats/sample).
+   invariant one (H = **0.080** nats/sample).
 2. **Predicts OOD failure.** Across **30** independently trained CNNs, the in-distribution env-help
-   score predicts the unseen colour-flip accuracy drop — **Spearman ρ = 0.88**, 95% CI [0.69, 0.96]
-   (Pearson 0.965).
+   score predicts the unseen colour-flip accuracy drop — **Spearman ρ = 0.88**, 95% CI [0.70, 0.95]
+   (Pearson 0.975).
 3. **Mitigation.** Projecting out the flagged directions and refitting only a linear head raises
-   colour-flip OOD accuracy **0.10 → 0.65**, beating random / PCA / shape-direction controls.
+   colour-flip OOD accuracy **0.10 → 0.64**, beating random / PCA / shape-direction controls.
 4. **Not circular.** With two competing shortcuts (colour + a corner patch), the label-free audit
    flags whichever one the model actually relied on (colour-strong ⇒ colour dirs; patch-strong ⇒
    patch dirs).
